@@ -1,27 +1,42 @@
 /* 
+Changelog
+9/12/2021
+Added checks for autobuy wait times to not exceed 30 seconds, or Infinant - this helps with buying queue issues.
+Increased autobuy delay to 500ms, this seems to help in general. If you want to lower it, just search for 500 and replace it with whatever ms delay you want. 
+Added support for autobuying "One mind" without getting stuck in a buy loop.
+Fixed Click Frenzy, Frenzy buff checks - the old Game.clickFrenzy and Game.frenzy checks do not seem to work. Switched to using HasBuff('') to check
+Changed where popup messages are positioned to resolve the issue of them being cluttered at the top of the screen and can't read the text.
+Changed how Status is displayed. Press S to see a popup with current mod status options that are enabled/disabled. If there is an item in the autobuy queue, it will display what it is waiting for. 
+Changed 'gold' autoclick function and removed the duplicate that was at the top of the script. This way turning off 'gold' (Keyboard Hotkey G) will not click Shimmers. 
+Added ascendluck Z Keyboard Hotkey to turn on - this will automatically ascend you when your total Prestige/Ascend Meter end in 777777 to unlock Lucky Payout (if you don't already have it)
+
+If you want to disable something from turning on by default; search for this line in this script (it's towards the bottom).
+        [65, 72, 71, 70, 77].map(function (key) {
+remove the numbers for the mapped keys, for example 65 is for autobuy (see Keyboard and Hotkeys below for other action #'s) 
+so if you wanted to stop autobuy from being automatically enabled you would update the line to this
+        [72, 71, 70, 77].map(function (key) {
+save the file, restart the game, or unload/load the mod. 
+
+Keyboard Hotkeys -
+A 'autobuy' (65) - Toggle Autobuy On/Off
+Z 'ascendluck' (90) - Calls Autobuy with 0 delay (Doesn't seem to do anything different)
+H 'season' (72) - Toggle Season On/Off (Automatically switches season on popup?)
+G 'gold' (71) - Toggle gold On/Off (Automatically clicks Shimmers Golden cookie, Reindeer, ect.)
+F 'frenzy' (70) - Toggle frenzy On/Off (Automatically clicks BigCookie during frenzy)
+M 'main'(77) - Toggle main On/Off (Automatically clicks BigCookie)
+S 'status' (83) - Sends mod status information to the console window
+P 'protect' (80) - Toggle protect On/Off (Calculates best building to buy protecting cookies needed for Lucky/Frenzy/ect.)
+
 Credits - 
 Lukyanov Dmitriy (Deamondz) (Github) - for the original script https://gist.github.com/deamondz/2372c8e48d9bcdc7bab4de956fa1e9b7
 killerkonnat (Reddit) https://www.reddit.com/user/killerkonnat/ - for providing better "protect" math "12000" to "1200".
+Elendarys (Reddit) https://www.reddit.com/user/Elendarys/ - for providing if(!isFinite(wait)) return; for autobuy. 
+Which triggered an idea for limiting buying wait times to 30 seconds.
 Reddit users for reporting bugs.
-Keyboard Hotkeys -
-A 'autobuy' - Toggle Autobuy On/Off
-Z 'oneshot' - Calls Autobuy with 0 delay (Doesn't seem to do anything different)
-H 'season' - Toggle Season On/Off (Automatically switches season on popup?)
-G 'gold' - Toggle gold On/Off (Automatically clicks Shimmers Golden cookie, Reindeer, ect.)
-N 'gnotify' - Currently broken
-F 'frenzy' - Toggle frenzy On/Off (Automatically clicks BigCookie during frenzy)
-M 'main' - Toggle main On/Off (Automatically clicks BigCookie)
-S 'status' - Sends mod status information to the console window
-P 'protect' - Toggle protect On/Off (Calculates best building to buy protecting cookies needed for Lucky/Frenzy/ect.)
 */
+
 Game.registerMod("Auto click and buy Mod", {
     init: function () {
-
-        setInterval(function () {
-            for (var h in Game.shimmers) {
-                Game.shimmers[h].pop();
-            }
-        }, 1000);
 
         // --- Calculator
         function Calculator() {
@@ -191,8 +206,10 @@ Game.registerMod("Auto click and buy Mod", {
                 return (base_cps * base_cps) * (new_cps - base_cps) / (price * price);
             },
             ecps: function () {
-                return Game.cookiesPs * (1 - Game.cpsSucked)
+                return Game.cookiesPs * (1 - Game.cpsSucked);
             },
+
+
 
             calc_bonus: function (item, list_generator, mouse_rate) {
                 var func = Game.Win;
@@ -247,11 +264,11 @@ Game.registerMod("Auto click and buy Mod", {
                 timeouts: {},
 
                 guard: {
-                    delay: 1000,
+                    delay: 100,
                     func: this.guard.bind(this)
                 },
                 autobuy: {
-                    delay: 50,
+                    delay: 500,
                     func: this.autobuy.bind(this)
                 },
                 oneshot: {
@@ -276,7 +293,7 @@ Game.registerMod("Auto click and buy Mod", {
                 frenzy: {
                     delay: 50,
                     func: function () {
-                        if (Game.clickFrenzy > 0) Game.ClickCookie(0);
+                        if (Game.hasBuff('Click Frenzy') != 0 > 0) Game.ClickCookie(0);
                     }
                 },
                 season: {
@@ -288,52 +305,52 @@ Game.registerMod("Auto click and buy Mod", {
                 gold: {
                     delay: 1000,
                     func: function () {
-                        if (Game.shimmers) {
-                            var sha = Object.keys(Game.shimmers);
 
-                            for (var i = 0; i < sha.length; i++) {
-                                sha[i].l.click();
-                            }
+                        if (Game.shimmers) {
+            for (var h in Game.shimmers) {
+		if (Game.shimmers[h] !== undefined)
+                Game.shimmers[h].pop();
+            }
                         }
                     }
                 },
-                gnotify: {
-                    delay: 1000,
-                    func: function () {
-                        if (Game.goldenCookie && Game.goldenCookie.life > 0 && Game.goldenCookie.wrath == 0) this.play();
-                    }.bind(this.notify)
-                },
+		ascendluck: {
+			delay: 50,
+			func: function () {
+			if ((Game.prestige + Game.ascendMeterLevel).toString().endsWith("777777") && !Game.HasUnlocked('Lucky payout')) {
+			console.log("Total Prestige/Ascend Level ends in 777777");
+			Game.Ascend(1);
+			Game.ClosePrompt();
+			}
+}
+},
             };
 
             this.toggle_action('guard');
         }
 
         Controller.prototype = {
-            say: function (msg, news) {
+            say: function (msg) {
                 console.log(msg);
-                if (news) {
-                    Game.Ticker = msg;
-                    Game.TickerAge = 10 * Game.fps;
-                } else {
-                    Game.Popup(msg);
-                }
+                Game.Popup(msg, Game.windowW / 2, Game.windowH - 100);
             },
 
             guard: function () {
                 var t = this.total;
-                this.total = 1000 * (Game.frenzy > 0) + Game.BuildingsOwned + Game.UpgradesOwned;
+                this.total = 1000 * (Game.hasBuff('Frenzy') != 0 ? 1 : 0) + Game.BuildingsOwned + Game.UpgradesOwned;
                 if (this.actions.timeouts.buy && (t != this.total || !this.actions.autobuy.id || this.target.price <= Game.cookies - this.calc.ecps()))
                     this.unqueue_action('buy');
             },
 
             autobuy: function () {
-                if (this.actions.timeouts.buy || Game.clickFrenzy > 0)
+                if (this.actions.timeouts.buy || Game.hasBuff('Frenzy') != 0 > 0)
                     return;
-
                 var info = this.calc.find_best(this.actions.main.id ? 1000 / this.actions.main.delay : 0);
-                var protect = this.protect && Game.Has('Get lucky') ? (Game.frenzy ? 1 : 7) * Game.cookiesPs * 1200 : 0;
+                var protect = this.protect && Game.Has('Get lucky') != 0 ? (Game.hasBuff('Frenzy') != 0 ? 1 : 7) * Game.cookiesPs * 1200 : 0;
                 var wait = (protect + info.price - Game.cookies) / this.calc.ecps();
-                var msg = (wait > 0 ? 'Waiting (' + Beautify(wait, 1) + ' s) for' : 'Choosing') + ' "' + info.obj.name + '"';
+                if (!isFinite(wait) || wait > 30)
+                    return;
+                var msg = (wait > 0 ? 'Waiting (' + Beautify(wait, 1) + ' s) for' : 'Buying') + ' "' + info.obj.name + '"';
                 console.log("For {cps = " + Beautify(Game.cookiesPs, 1) + ", protect = " + Beautify(protect) + "} best candidate is", info);
                 this.say(msg);
                 if (wait > 0) {
@@ -344,15 +361,28 @@ Game.registerMod("Auto click and buy Mod", {
                         1000 * (Game.cookiesPs ? wait + 0.05 : 60),
                         function () {
                             if (info.price <= Game.cookies) {
-                                this.say('Bought "' + info.obj.name + '"');
-                                info.obj.buy();
-                                this.total++;
+                                this.say('Buying "' + info.obj.name + '"');
+                                if (info.obj.name === "One mind") {
+                                    Game.UpgradesById['69'].buy(1);
+                                    Game.ClosePrompt();
+                                    this.total++;
+                                    this.unqueue_action('buy');
+                                } else {
+                                    info.obj.buy();
+                                    this.total++;
+                                }
                             }
                         }.bind(this)
                     );
                 } else {
-                    info.obj.buy();
-                    this.total++;
+                    if (info.obj.name === "One mind") {
+                        Game.UpgradesById['69'].buy(1);
+                        Game.ClosePrompt();
+                        this.total++;
+                    } else {
+                        info.obj.buy();
+                        this.total++;
+                    }
                 }
             },
 
@@ -368,12 +398,13 @@ Game.registerMod("Auto click and buy Mod", {
                 msg += '<p>cookie protection for max frenzy/lucky combo: ' + b2s(this.protect) + '</p>';
                 if (this.actions.timeouts.buy)
                     msg += '<p>waiting ' + Beautify((this.target.price - Game.cookies) / this.calc.ecps(), 1) + ' s for "' + this.target.name + '"</p>';
-                this.say(msg, true);
+                this.say(msg);
             },
 
             toggle_protect: function () {
                 this.protect = !this.protect;
                 this.unqueue_action('buy');
+                this.say('Action Protect turned ' + (this.protect ? 'on' : 'off'));
             },
 
             toggle_action: function (name) {
@@ -409,13 +440,12 @@ Game.registerMod("Auto click and buy Mod", {
         };
 
         var view = {
-            ctrl: new Controller,
+            ctrl: new Controller(),
             actions: {
                 65 /* A */: 'autobuy',
-                90 /* Z */: 'oneshot',
+                90 /* Z */: 'ascendluck',
                 72 /* H */: 'season',
                 71 /* G */: 'gold',
-                78 /* N */: 'gnotify',
                 70 /* F */: 'frenzy',
                 77 /* M */: 'main',
                 83 /* S */: 'status',
