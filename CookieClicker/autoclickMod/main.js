@@ -19,7 +19,7 @@ save the file, restart the game, or unload/load the mod.
 
 Keyboard Hotkeys -
 A 'autobuy' (65) - Toggle Autobuy On/Off
-Z 'ascendluck' (90) - Calls Autobuy with 0 delay (Doesn't seem to do anything different)
+Z 'ascendluck' (90) -  this will automatically ascend you when your total Prestige/Ascend Meter end in 777777 to unlock Lucky Payout (if you don't already have it)
 H 'season' (72) - Toggle Season On/Off (Automatically switches season on popup?)
 G 'gold' (71) - Toggle gold On/Off (Automatically clicks Shimmers Golden cookie, Reindeer, ect.)
 F 'frenzy' (70) - Toggle frenzy On/Off (Automatically clicks BigCookie during frenzy)
