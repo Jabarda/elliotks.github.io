@@ -307,23 +307,23 @@ Game.registerMod("Auto click and buy Mod", {
                     func: function () {
 
                         if (Game.shimmers) {
-            for (var h in Game.shimmers) {
-		if (Game.shimmers[h] !== undefined)
-                Game.shimmers[h].pop();
-            }
+                            for (var h in Game.shimmers) {
+                                if (Game.shimmers[h] !== undefined)
+                                    Game.shimmers[h].pop();
+                            }
                         }
                     }
                 },
-		ascendluck: {
-			delay: 50,
-			func: function () {
-			if ((Game.prestige + Game.ascendMeterLevel).toString().endsWith("777777") && !Game.HasUnlocked('Lucky payout')) {
-			console.log("Total Prestige/Ascend Level ends in 777777");
-			Game.Ascend(1);
-			Game.ClosePrompt();
-			}
-}
-},
+                ascendluck: {
+                    delay: 50,
+                    func: function () {
+                        if ((Game.prestige + Game.ascendMeterLevel).toString().endsWith("777777") && !Game.HasUnlocked('Lucky payout')) {
+                            console.log("Total Prestige/Ascend Level ends in 777777");
+                            Game.Ascend(1);
+                            Game.ClosePrompt();
+                        }
+                    }
+                },
             };
 
             this.toggle_action('guard');
