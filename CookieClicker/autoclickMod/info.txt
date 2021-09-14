@@ -3,9 +3,9 @@
 	"ID": "autoclickmod",
 	"Author": "CreepyDrunk",
 	"Description": "Cookie clicker autobuyer - Adapted from Cookie clicker autobuyer by deamondz (https://gist.github.com/deamondz/2372c8e48d9bcdc7bab4de956fa1e9b7).",
-	"ModVersion": 1.1,
+	"ModVersion": 1.5,
 	"GameVersion": 2.042,
-	"Date": "02/09/2021",
+	"Date": "02/13/2021",
 	"Dependencies": [],
 	"Disabled": 1,
 	"AllowSteamAchievs": 1

@@ -1,5 +1,51 @@
 /* 
 Changelog
+9/13/2021
+Removed skipping autobuy buying during Frenzy, protect math compensates for it.
+Fixed Ascendluck, will switch off after ascending so you aren't stuck in a loop. (Thanks Mase123y for reporting issue)
+Lowered autobuy delay from 500 to 200
+Added Building store items filter. Nothing is actually excluded, special case usage for people who want to filter buildings out. 
+to use this after the * / line put the id you want to exclude from the list above. For example if you want to exclude Mine from autobuy 
+                                // Filter to exclude buildings
+                                // Buildings
+                                / * data placeholder
+                                0, // Cursor
+                                1, // Grandma
+                                2, // Farm
+                                3, // Mine
+                                4, // Factory
+                                5, // Bank
+                                6, // Temple
+                                7, // Wizard tower
+                                8, // Shipment
+                                9, // Alchemy lab
+                                10, // Portal
+                                11, // Time machine
+                                12, // Antimatter condenser
+                                13, // Prism
+                                14, // Chancemaker
+                                15, // Fractal engine
+                                16, // Javascript console
+                                17 // Idleverse
+                                * /
+                                3 // Mine
+If you want to exclude more than add a comma 
+                                3, // Mine
+                                6 // Temple
+This can also be done with store upgrades under "// Filter to exclude Switches / Prestiege Items" - for example, if you wanted to exclude "One mind"
+                                // Toggle type = tech
+                                / * data placeholder
+                                65, // Specialized chocolate chips
+                                66, // Designer cocoa beans
+                                67, // Ritual rolling pins
+                                68, // Underworld ovens
+                                69, // One mind 
+                                70, // Exotic nuts
+                                71, // Communal brainsweep
+                                72, // Arcane sugar
+                                73, // Elder Pact 
+                                * /
+                                69, // One mind
 9/12/2021
 Added checks for autobuy wait times to not exceed 30 seconds, or Infinant - this helps with buying queue issues.
 Increased autobuy delay to 500ms, this seems to help in general. If you want to lower it, just search for 500 and replace it with whatever ms delay you want. 
@@ -19,7 +65,7 @@ save the file, restart the game, or unload/load the mod.
 
 Keyboard Hotkeys -
 A 'autobuy' (65) - Toggle Autobuy On/Off
-Z 'ascendluck' (90) -  this will automatically ascend you when your total Prestige/Ascend Meter end in 777777 to unlock Lucky Payout (if you don't already have it)
+Z 'ascendluck' (90) - Calls Autobuy with 0 delay (Doesn't seem to do anything different)
 H 'season' (72) - Toggle Season On/Off (Automatically switches season on popup?)
 G 'gold' (71) - Toggle gold On/Off (Automatically clicks Shimmers Golden cookie, Reindeer, ect.)
 F 'frenzy' (70) - Toggle frenzy On/Off (Automatically clicks BigCookie during frenzy)
@@ -184,7 +230,32 @@ Game.registerMod("Auto click and buy Mod", {
                 },
                 {
                     objects: function () {
-                        return Game.ObjectsById;
+                        return Game.ObjectsById.filter(function (e) {
+                            return ([
+                                // Filter to exclude buildings
+                                // Buildings
+                                /* data placeholder
+                                0, // Cursor
+                                1, // Grandma
+                                2, // Farm
+                                3, // Mine
+                                4, // Factory
+                                5, // Bank
+                                6, // Temple
+                                7, // Wizard tower
+                                8, // Shipment
+                                9, // Alchemy lab
+                                10, // Portal
+                                11, // Time machine
+                                12, // Antimatter condenser
+                                13, // Prism
+                                14, // Chancemaker
+                                15, // Fractal engine
+                                16, // Javascript console
+                                17 // Idleverse
+                                */
+                            ].indexOf(e.id) < 0);
+                        });
                     },
                     accessors: {
                         add: function (e) {
@@ -268,11 +339,7 @@ Game.registerMod("Auto click and buy Mod", {
                     func: this.guard.bind(this)
                 },
                 autobuy: {
-                    delay: 500,
-                    func: this.autobuy.bind(this)
-                },
-                oneshot: {
-                    delay: 0,
+                    delay: 200,
                     func: this.autobuy.bind(this)
                 },
                 status: {
@@ -316,13 +383,7 @@ Game.registerMod("Auto click and buy Mod", {
                 },
                 ascendluck: {
                     delay: 50,
-                    func: function () {
-                        if ((Game.prestige + Game.ascendMeterLevel).toString().endsWith("777777") && !Game.HasUnlocked('Lucky payout')) {
-                            console.log("Total Prestige/Ascend Level ends in 777777");
-                            Game.Ascend(1);
-                            Game.ClosePrompt();
-                        }
-                    }
+                    func: this.ascendluck.bind(this)
                 },
             };
 
@@ -343,7 +404,7 @@ Game.registerMod("Auto click and buy Mod", {
             },
 
             autobuy: function () {
-                if (this.actions.timeouts.buy || Game.hasBuff('Frenzy') != 0 > 0)
+                if (this.actions.timeouts.buy)
                     return;
                 var info = this.calc.find_best(this.actions.main.id ? 1000 / this.actions.main.delay : 0);
                 var protect = this.protect && Game.Has('Get lucky') != 0 ? (Game.hasBuff('Frenzy') != 0 ? 1 : 7) * Game.cookiesPs * 1200 : 0;
@@ -399,6 +460,15 @@ Game.registerMod("Auto click and buy Mod", {
                 if (this.actions.timeouts.buy)
                     msg += '<p>waiting ' + Beautify((this.target.price - Game.cookies) / this.calc.ecps(), 1) + ' s for "' + this.target.name + '"</p>';
                 this.say(msg);
+            },
+
+            ascendluck: function () {
+                if ((Game.prestige + Game.ascendMeterLevel).toString().endsWith("777777") && !Game.HasUnlocked('Lucky payout')) {
+                    console.log("Total Prestige/Ascend Level ends in 777777");
+                    Game.Ascend(1);
+                    Game.ClosePrompt();
+                    this.toggle_action('ascendluck');
+                }
             },
 
             toggle_protect: function () {
