@@ -293,10 +293,12 @@ Game.registerMod("Auto click and buy Mod", {
                     var cps = this.calc.ecps() + Game.computedMouseCps * this.rate;
                     this.item.sub(e);
                     Game.CalculateGains();
+                    var wait = (price - Game.cookies) / this.calc.ecps();
                     return {
                         obj: e,
                         price: price,
-                        acc: this.calc.cps_acc(this.base_cps, cps, price)
+                        acc: this.calc.cps_acc(this.base_cps, cps, price),
+                        wait: wait
                     };
                 }.bind({
                     item: item,
@@ -309,13 +311,13 @@ Game.registerMod("Auto click and buy Mod", {
                 return res;
             },
 
-            find_best: function (mouse_rate) {
+            find_best: function (mouse_rate, max_wait) {
                 var pool = [];
                 var zero_buy = Math.sqrt(Game.cookiesEarned * Game.cookiesPs);
                 for (var i = 0; i < this.schema.length; i++)
                     pool = pool.concat(this.calc_bonus(this.schema[i].accessors, this.schema[i].objects, mouse_rate || 0));
                 return pool.reduce(function (m, v) {
-                    return m.acc == 0 && m.price < zero_buy ? m : (v.acc == 0 && v.price < zero_buy ? v : (m.acc < v.acc ? v : m));
+                    return m.acc == 0 && m.price < zero_buy ? m : (v.acc == 0 && v.price < zero_buy ? v : (m.acc < v.acc && v.wait < max_wait? v : m));
                 }, pool[0]);
             }
         };
@@ -406,10 +408,10 @@ Game.registerMod("Auto click and buy Mod", {
             autobuy: function () {
                 if (this.actions.timeouts.buy)
                     return;
-                var info = this.calc.find_best(this.actions.main.id ? 1000 / this.actions.main.delay : 0);
+                var info = this.calc.find_best(this.actions.main.id ? 1000 / this.actions.main.delay : 0, 150);
                 var protect = this.protect && Game.Has('Get lucky') != 0 ? (Game.hasBuff('Frenzy') != 0 ? 1 : 7) * Game.cookiesPs * 1200 : 0;
                 var wait = (protect + info.price - Game.cookies) / this.calc.ecps();
-                if (!isFinite(wait) || wait > 30)
+                if (!isFinite(wait) || wait > 150)
                     return;
                 var msg = (wait > 0 ? 'Waiting (' + Beautify(wait, 1) + ' s) for' : 'Buying') + ' "' + info.obj.name + '"';
                 console.log("For {cps = " + Beautify(Game.cookiesPs, 1) + ", protect = " + Beautify(protect) + "} best candidate is", info);
